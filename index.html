@@ -1,1 +1,2604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, viewport-fit=cover"
+>
+
+<title>Now Playing Remote</title>
+
+<style>
+:root{
+  --bg:#eceef2;
+  --pn:#fff;
+  --ink:#14161c;
+  --mu:#667085;
+  --ln:#d0d4dc;
+  --k:#e1e4ea;
+  --tint:#7c8aa5;
+  --ac:#1a9c4a;
+  color-scheme:light dark;
+}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0c0e12;
+    --pn:#161a22;
+    --ink:#eceef3;
+    --mu:#8d95a6;
+    --ln:#2a303c;
+    --k:#212633;
+    --ac:#3ddc7a;
+  }
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  width:100%;
+  min-height:100%;
+  margin:0;
+}
+
+body{
+  min-height:100dvh;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:
+    max(10px,env(safe-area-inset-top))
+    max(10px,env(safe-area-inset-right))
+    max(10px,env(safe-area-inset-bottom))
+    max(10px,env(safe-area-inset-left));
+
+  color:var(--ink);
+
+  font:
+    15px
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+
+  background:
+    radial-gradient(
+      120% 70% at 50% 0,
+      color-mix(
+        in srgb,
+        var(--tint) 55%,
+        var(--bg)
+      ),
+      var(--bg)
+    );
+
+  transition:background .6s;
+
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+
+button,
+input{
+  font:inherit;
+  color:var(--ink);
+}
+
+button{
+  background:var(--k);
+  border:1px solid var(--ln);
+  border-radius:999px;
+  cursor:pointer;
+  padding:8px 14px;
+  touch-action:manipulation;
+  transition:
+    transform .08s,
+    border-color .15s,
+    background .15s;
+}
+
+button:hover{
+  border-color:var(--mu);
+}
+
+button:active{
+  transform:scale(.96);
+}
+
+button.on{
+  background:var(--ac);
+  color:#000;
+  border-color:var(--ac);
+}
+
+[hidden]{
+  display:none!important;
+}
+
+
+/* =========================================
+   MAIN
+========================================= */
+
+main{
+  width:100%;
+  min-height:100dvh;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:10px;
+}
+
+
+/* =========================================
+   SETUP
+========================================= */
+
+#setup{
+  width:min(500px,100%);
+
+  background:var(--pn);
+
+  border:1px solid var(--ln);
+
+  border-radius:16px;
+
+  padding:18px;
+
+  line-height:1.5;
+}
+
+#setup h1{
+  font-size:20px;
+  margin:0 0 8px;
+}
+
+#setup ol{
+  padding-left:20px;
+  margin:8px 0;
+}
+
+code{
+  background:var(--k);
+  padding:2px 6px;
+  border-radius:5px;
+  word-break:break-all;
+  font-size:13px;
+}
+
+input{
+  width:100%;
+
+  padding:10px;
+
+  border-radius:8px;
+
+  border:1px solid var(--ln);
+
+  background:var(--bg);
+
+  margin:8px 0;
+}
+
+
+/* =========================================
+   PLAYER
+========================================= */
+
+#player{
+  width:min(
+    500px,
+    100%
+  );
+
+  /*
+    The player uses the entire available
+    viewport. The album art is the flexible
+    element; the controls are NOT hidden.
+  */
+
+  min-height:calc(100dvh - 20px);
+
+  display:flex;
+
+  flex-direction:column;
+
+  align-items:center;
+
+  justify-content:center;
+
+  padding:6px 0;
+
+  min-width:0;
+}
+
+
+/* =========================================
+   ALBUM ART
+
+   This is the part that automatically
+   shrinks when the screen is short.
+========================================= */
+
+.screen{
+
+  width:min(
+    100%,
+    400px,
+    calc(100dvh - 340px)
+  );
+
+  aspect-ratio:1 / 1;
+
+  flex:none;
+
+  position:relative;
+
+  border-radius:22px;
+
+  overflow:hidden;
+
+  background:var(--k);
+
+  box-shadow:
+    0 18px 50px #0006;
+}
+
+.screen img{
+  width:100%;
+  height:100%;
+
+  display:block;
+
+  object-fit:cover;
+}
+
+.meta{
+
+  position:absolute;
+
+  left:0;
+  right:0;
+  bottom:0;
+
+  padding:
+    50px
+    18px
+    16px;
+
+  background:
+    linear-gradient(
+      transparent,
+      #000d
+    );
+
+  color:#fff;
+}
+
+#title{
+
+  font-size:22px;
+
+  font-weight:700;
+
+  line-height:1.2;
+
+  overflow:hidden;
+
+  text-overflow:ellipsis;
+
+  white-space:nowrap;
+}
+
+#artist{
+
+  margin-top:3px;
+
+  font-size:16px;
+
+  opacity:.85;
+
+  overflow:hidden;
+
+  text-overflow:ellipsis;
+
+  white-space:nowrap;
+}
+
+
+/* =========================================
+   PROGRESS
+========================================= */
+
+.bar{
+
+  width:100%;
+
+  height:8px;
+
+  flex:none;
+
+  background:var(--k);
+
+  border-radius:4px;
+
+  margin:
+    12px 0 4px;
+
+  cursor:pointer;
+
+  overflow:hidden;
+
+  touch-action:manipulation;
+}
+
+.bar i{
+
+  display:block;
+
+  height:100%;
+
+  width:0;
+
+  background:var(--ac);
+}
+
+.tm{
+
+  width:100%;
+
+  display:flex;
+
+  justify-content:space-between;
+
+  color:var(--mu);
+
+  font-size:12px;
+
+  flex:none;
+
+  font-variant-numeric:tabular-nums;
+}
+
+
+/* =========================================
+   MAIN CONTROLS
+========================================= */
+
+.deck{
+
+  width:100%;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:space-between;
+
+  flex:none;
+
+  margin:
+    10px 0 10px;
+
+  padding:
+    0 8px;
+}
+
+.deck .nb{
+
+  width:60px;
+  height:60px;
+
+  min-width:60px;
+
+  padding:0;
+
+  font-size:22px;
+}
+
+
+/* =========================================
+   VOLUME KNOB
+========================================= */
+
+#knob{
+
+  width:126px;
+  height:126px;
+
+  flex:none;
+
+  position:relative;
+
+  border-radius:50%;
+
+  touch-action:none;
+
+  cursor:grab;
+
+  user-select:none;
+
+  -webkit-user-select:none;
+
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      var(--pn),
+      var(--k)
+    );
+
+  border:
+    2px solid var(--ln);
+
+  box-shadow:
+    0 10px 30px #0004,
+    inset 0 2px 0 #fff2;
+}
+
+#knob:active{
+  cursor:grabbing;
+}
+
+#knob .ring{
+
+  position:absolute;
+
+  inset:-9px;
+
+  border-radius:50%;
+
+  background:
+    conic-gradient(
+      from -135deg,
+      var(--ac) 0deg,
+      var(--ac) 0deg,
+      #313746 0deg,
+      #313746 270deg
+    );
+
+  filter:
+    drop-shadow(
+      0 0 7px
+      color-mix(
+        in srgb,
+        var(--ac) 80%,
+        transparent
+      )
+    );
+
+  z-index:-1;
+}
+
+#knob .ring:after{
+
+  content:"";
+
+  position:absolute;
+
+  inset:6px;
+
+  border-radius:50%;
+
+  background:var(--bg);
+}
+
+#knob i{
+
+  position:absolute;
+
+  inset:0;
+}
+
+#knob i:after{
+
+  content:"";
+
+  position:absolute;
+
+  left:50%;
+  top:10px;
+
+  width:5px;
+  height:24px;
+
+  margin-left:-2.5px;
+
+  border-radius:3px;
+
+  background:var(--ac);
+
+  box-shadow:
+    0 0 8px var(--ac);
+}
+
+#knob span{
+
+  position:absolute;
+
+  inset:0;
+
+  display:grid;
+
+  place-items:center;
+
+  font-size:26px;
+
+  font-weight:700;
+
+  font-variant-numeric:tabular-nums;
+}
+
+
+/* =========================================
+   SECONDARY CONTROLS
+========================================= */
+
+.row{
+
+  width:100%;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  flex-wrap:wrap;
+
+  gap:8px;
+
+  flex:none;
+}
+
+.row button{
+
+  min-height:38px;
+
+  padding:
+    8px 14px;
+}
+
+
+/* =========================================
+   DEVICE + INSTRUCTIONS
+
+   These are ALWAYS displayed.
+========================================= */
+
+#dev{
+
+  width:100%;
+
+  color:var(--mu);
+
+  font-size:13px;
+
+  text-align:center;
+
+  margin-top:7px;
+
+  flex:none;
+}
+
+#player > .sub:last-child{
+
+  width:100%;
+
+  color:var(--mu);
+
+  font-size:12px;
+
+  line-height:1.35;
+
+  text-align:center;
+
+  margin-top:5px;
+
+  flex:none;
+}
+
+
+/* =========================================
+   MESSAGE
+========================================= */
+
+#msg{
+
+  position:fixed;
+
+  left:50%;
+
+  bottom:
+    max(8px,env(safe-area-inset-bottom));
+
+  transform:translateX(-50%);
+
+  width:min(
+    calc(100% - 20px),
+    500px
+  );
+
+  color:#e5484d;
+
+  text-align:center;
+
+  font-size:13px;
+
+  pointer-events:none;
+}
+
+
+/* =========================================
+   PHONE
+========================================= */
+
+@media(max-width:600px){
+
+  main{
+    padding:
+      max(8px,env(safe-area-inset-top))
+      max(8px,env(safe-area-inset-right))
+      max(8px,env(safe-area-inset-bottom))
+      max(8px,env(safe-area-inset-left));
+  }
+
+  #player{
+
+    width:100%;
+
+    min-height:
+      calc(100dvh - 16px);
+  }
+
+  .screen{
+
+    width:min(
+      100%,
+      calc(100dvh - 325px)
+    );
+
+    border-radius:20px;
+  }
+
+  .meta{
+
+    padding:
+      42px
+      13px
+      13px;
+  }
+
+  #title{
+    font-size:19px;
+  }
+
+  #artist{
+    font-size:15px;
+  }
+
+  .bar{
+    margin-top:10px;
+  }
+
+  .deck{
+
+    margin:
+      9px 0;
+
+    padding:
+      0 5px;
+  }
+
+  .deck .nb{
+
+    width:52px;
+    height:52px;
+
+    min-width:52px;
+
+    font-size:19px;
+  }
+
+  #knob{
+
+    width:108px;
+    height:108px;
+  }
+
+  #knob .ring{
+    inset:-8px;
+  }
+
+  #knob span{
+    font-size:22px;
+  }
+
+  .row{
+
+    gap:6px;
+  }
+
+  .row button{
+
+    font-size:13px;
+
+    padding:
+      7px 11px;
+  }
+
+  #dev{
+
+    margin-top:6px;
+
+    font-size:12px;
+  }
+
+  #player > .sub:last-child{
+
+    margin-top:4px;
+
+    font-size:11px;
+  }
+}
+
+
+/* =========================================
+   SHORT PHONE
+
+   Still keeps every control visible.
+   Album art gets smaller.
+========================================= */
+
+@media(max-height:700px){
+
+  #player{
+    min-height:
+      calc(100dvh - 12px);
+  }
+
+  .screen{
+
+    width:min(
+      100%,
+      calc(100dvh - 295px)
+    );
+  }
+
+  .bar{
+    margin-top:7px;
+  }
+
+  .deck{
+    margin:
+      7px 0;
+  }
+
+  .deck .nb{
+
+    width:46px;
+    height:46px;
+
+    min-width:46px;
+
+    font-size:18px;
+  }
+
+  #knob{
+
+    width:92px;
+    height:92px;
+  }
+
+  #knob .ring{
+    inset:-7px;
+  }
+
+  #knob i:after{
+
+    top:7px;
+
+    height:18px;
+  }
+
+  #knob span{
+    font-size:19px;
+  }
+
+  .row button{
+
+    min-height:34px;
+
+    padding:
+      6px 10px;
+
+    font-size:12px;
+  }
+
+  #dev{
+
+    margin-top:4px;
+
+    font-size:11px;
+  }
+
+  #player > .sub:last-child{
+
+    margin-top:3px;
+
+    font-size:10px;
+  }
+}
+
+
+/* =========================================
+   VERY SHORT SCREENS
+
+   Keep everything usable rather than
+   hiding the instructions.
+========================================= */
+
+@media(max-height:560px){
+
+  body{
+    align-items:flex-start;
+  }
+
+  main{
+    min-height:560px;
+  }
+
+  #player{
+    min-height:540px;
+  }
+
+  .screen{
+
+    width:min(
+      100%,
+      215px
+    );
+  }
+}
+</style>
+</head>
+
+<body>
+
+<main>
+
+<!-- =====================================
+     SETUP SCREEN
+===================================== -->
+
+<section id="setup">
+
+  <h1>Now Playing Remote</h1>
+
+  <ol>
+
+    <li>
+      Create an app at
+      <code>developer.spotify.com/dashboard</code>
+      and add this Redirect URI:
+      <code id="ru"></code>
+    </li>
+
+    <li>
+      Paste the app's Client ID, then connect.
+    </li>
+
+  </ol>
+
+  <input
+    id="cid"
+    placeholder="Spotify Client ID"
+    autocomplete="off"
+  >
+
+  <div class="row">
+
+    <button
+      id="login"
+      class="on"
+    >
+      Connect Spotify
+    </button>
+
+    <button id="demo">
+      Try demo
+    </button>
+
+  </div>
+
+  <div
+    id="warn"
+    class="sub"
+  ></div>
+
+</section>
+
+
+<!-- =====================================
+     PLAYER
+===================================== -->
+
+<section
+  id="player"
+  hidden
+>
+
+  <!-- ALBUM ART -->
+
+  <div class="screen">
+
+    <img
+      id="art"
+      alt="Album art"
+    >
+
+    <div class="meta">
+
+      <div id="title">
+        Nothing playing
+      </div>
+
+      <div id="artist"></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- PROGRESS -->
+
+  <div
+    class="bar"
+    id="bar"
+  >
+
+    <i id="fill"></i>
+
+  </div>
+
+
+  <div class="tm">
+
+    <span id="cur">
+      0:00
+    </span>
+
+    <span id="dur">
+      0:00
+    </span>
+
+  </div>
+
+
+  <!-- MAIN CONTROLS -->
+
+  <div class="deck">
+
+    <button
+      class="nb"
+      id="prev"
+      aria-label="Previous track"
+    >
+      ⏮
+    </button>
+
+
+    <!--
+      Rotate = volume
+      Click = play/pause
+    -->
+
+    <div
+      id="knob"
+      role="slider"
+      aria-label="Volume. Click to play or pause"
+      tabindex="0"
+    >
+
+      <div class="ring"></div>
+
+      <i></i>
+
+      <span id="vol">
+        –
+      </span>
+
+    </div>
+
+
+    <button
+      class="nb"
+      id="next"
+      aria-label="Next track"
+    >
+      ⏭
+    </button>
+
+  </div>
+
+
+  <!-- SECONDARY CONTROLS -->
+
+  <div class="row">
+
+    <button id="shuf">
+      Shuffle
+    </button>
+
+    <button id="rep">
+      Repeat: off
+    </button>
+
+    <button id="out">
+      Disconnect
+    </button>
+
+  </div>
+
+
+  <!-- DEVICE -->
+
+  <div
+    id="dev"
+    class="sub"
+  ></div>
+
+
+  <!-- INSTRUCTIONS -->
+
+  <div class="sub">
+    Turn the knob for volume, click it to play or pause.
+    Keys: Space, ←/→, ↑/↓
+  </div>
+
+</section>
+
+
+<div id="msg"></div>
+
+</main>
+
+
+<script>
+
+const $=
+  s=>document.querySelector(s);
+
+const API=
+  'https://api.spotify.com/v1';
+
+const AUTH=
+  'https://accounts.spotify.com';
+
+const SCOPE=
+  'user-read-playback-state '+
+  'user-modify-playback-state '+
+  'user-read-currently-playing';
+
+const REDIR=
+  location.origin+
+  location.pathname;
+
+const RM=[
+  'off',
+  'context',
+  'track'
+];
+
+
+/* =====================================
+   LOCAL STORAGE
+===================================== */
+
+const get=k=>{
+
+  try{
+    return localStorage.getItem(k);
+  }
+
+  catch(e){
+    return null;
+  }
+
+};
+
+const set=(k,v)=>{
+
+  try{
+    localStorage.setItem(k,v);
+  }
+
+  catch(e){}
+
+};
+
+const del=k=>{
+
+  try{
+    localStorage.removeItem(k);
+  }
+
+  catch(e){}
+
+};
+
+
+/* =====================================
+   STATE
+===================================== */
+
+let tok=null;
+
+let demo=false;
+
+let st=null;
+
+let stAt=0;
+
+let vol=50;
+
+let volLock=0;
+
+let wait=3000;
+
+let curArt='';
+
+let idx=0;
+
+let vt;
+
+
+/* =====================================
+   HELPERS
+===================================== */
+
+const msg=t=>{
+
+  $('#msg').textContent=
+    t||'';
+
+  if(t){
+
+    setTimeout(
+      ()=>{
+        $('#msg').textContent='';
+      },
+      6000
+    );
+
+  }
+
+};
+
+
+const fm=ms=>{
+
+  const s=
+    Math.floor(ms/1000);
+
+  return(
+    Math.floor(s/60)+
+    ':'+
+    String(
+      s%60
+    ).padStart(2,'0')
+  );
+
+};
+
+
+/* =====================================
+   SETUP
+===================================== */
+
+$('#ru').textContent=
+  REDIR;
+
+$('#cid').value=
+  get('cid')||'';
+
+
+if(
+  location.protocol!=='https:' &&
+  location.hostname!=='127.0.0.1'
+){
+
+  $('#warn').textContent=
+    'Open this page from http://127.0.0.1:PORT/ '+
+    '(for example run "python3 -m http.server 8888" in this folder). '+
+    'Do not open the HTML directly with file://.';
+
+}
+
+
+/* =====================================
+   PKCE AUTH
+===================================== */
+
+const b64=b=>
+
+  btoa(
+    String.fromCharCode(
+      ...new Uint8Array(b)
+    )
+  )
+  .replace(/\+/g,'-')
+  .replace(/\//g,'_')
+  .replace(/=+$/,'');
+
+
+$('#login').onclick=
+async()=>{
+
+  const id=
+    $('#cid').value.trim();
+
+  if(!id){
+
+    msg(
+      'Paste your Client ID first.'
+    );
+
+    return;
+  }
+
+  set(
+    'cid',
+    id
+  );
+
+  const v=
+    b64(
+      crypto.getRandomValues(
+        new Uint8Array(48)
+      )
+    );
+
+  set(
+    'ver',
+    v
+  );
+
+  const c=
+    b64(
+      await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(v)
+      )
+    );
+
+  location.href=
+    AUTH+
+    '/authorize?'+
+    new URLSearchParams({
+
+      client_id:id,
+
+      response_type:'code',
+
+      redirect_uri:REDIR,
+
+      scope:SCOPE,
+
+      code_challenge_method:'S256',
+
+      code_challenge:c
+
+    });
+
+};
+
+
+/* =====================================
+   TOKEN
+===================================== */
+
+async function token(body){
+
+  const r=
+    await fetch(
+      AUTH+'/api/token',
+      {
+        method:'POST',
+
+        headers:{
+          'Content-Type':
+            'application/x-www-form-urlencoded'
+        },
+
+        body:
+          new URLSearchParams({
+            client_id:get('cid'),
+            ...body
+          })
+      }
+    );
+
+  if(!r.ok){
+
+    throw new Error(
+      'token '+r.status
+    );
+
+  }
+
+  const j=
+    await r.json();
+
+  tok=
+    j.access_token;
+
+  set(
+    'tok',
+    tok
+  );
+
+  set(
+    'exp',
+    Date.now()+
+    j.expires_in*1000-
+    60000
+  );
+
+  if(j.refresh_token){
+
+    set(
+      'ref',
+      j.refresh_token
+    );
+
+  }
+
+}
+
+
+/* =====================================
+   LOGOUT
+===================================== */
+
+function logout(){
+
+  [
+    'tok',
+    'exp',
+    'ref',
+    'ver'
+  ].forEach(del);
+
+  tok=null;
+
+  st=null;
+
+  demo=false;
+
+  show();
+
+}
+
+$('#out').onclick=
+  logout;
+
+
+/* =====================================
+   SPOTIFY API
+===================================== */
+
+async function api(
+  path,
+  opt={}
+){
+
+  try{
+
+    if(
+      Date.now()>+get('exp') &&
+      get('ref')
+    ){
+
+      await token({
+
+        grant_type:
+          'refresh_token',
+
+        refresh_token:
+          get('ref')
+
+      });
+
+    }
+
+  }
+
+  catch(e){
+
+    logout();
+
+    throw e;
+
+  }
+
+  const r=
+    await fetch(
+      API+path,
+      {
+        ...opt,
+
+        headers:{
+          Authorization:
+            'Bearer '+
+            (tok||get('tok'))
+        }
+
+      }
+    );
+
+  if(r.status===401){
+
+    logout();
+
+    msg(
+      'Session expired. Connect again.'
+    );
+
+  }
+
+  if(r.status===429){
+
+    wait=
+      (
+        +r.headers.get(
+          'Retry-After'
+        )||5
+      )*1000;
+
+  }
+
+  return r;
+
+}
+
+
+/* =====================================
+   POLLING
+===================================== */
+
+async function poll(){
+
+  if(
+    demo ||
+    !(tok||get('tok'))
+  ){
+
+    return;
+
+  }
+
+  try{
+
+    const r=
+      await api(
+        '/me/player'
+      );
+
+    if(r.status===204){
+
+      st=null;
+
+    }
+
+    else if(r.ok){
+
+      st=
+        await r.json();
+
+      stAt=
+        performance.now();
+
+      wait=3000;
+
+    }
+
+    else if(r.status===403){
+
+      msg(
+        'Spotify returned 403. Is the app owner a Premium subscriber, and are you on the app user list?'
+      );
+
+    }
+
+    render();
+
+  }
+
+  catch(e){}
+
+}
+
+
+(async function loop(){
+
+  if(!document.hidden){
+
+    await poll();
+
+  }
+
+  setTimeout(
+    loop,
+    wait
+  );
+
+})();
+
+
+/* =====================================
+   ACTIONS
+===================================== */
+
+function act(k,v){
+
+  if(!st)
+    return;
+
+  const rq={
+
+    pp:()=>[
+      'PUT',
+      st.is_playing
+        ?'/me/player/pause'
+        :'/me/player/play'
+    ],
+
+    next:()=>[
+      'POST',
+      '/me/player/next'
+    ],
+
+    prev:()=>[
+      'POST',
+      '/me/player/previous'
+    ],
+
+    vol:()=>[
+      'PUT',
+      '/me/player/volume?volume_percent='+
+      v
+    ],
+
+    seek:()=>[
+      'PUT',
+      '/me/player/seek?position_ms='+
+      Math.round(v)
+    ],
+
+    shuf:()=>[
+      'PUT',
+      '/me/player/shuffle?state='+
+      !st.shuffle_state
+    ],
+
+    rep:()=>[
+      'PUT',
+      '/me/player/repeat?state='+
+      RM[
+        (
+          RM.indexOf(
+            st.repeat_state
+          )+1
+        )%3
+      ]
+    ]
+
+  }[k]();
+
+
+  const now=
+    performance.now();
+
+
+  if(k==='pp'){
+
+    st.progress_ms+=
+      st.is_playing
+        ?now-stAt
+        :0;
+
+    stAt=now;
+
+    st.is_playing=
+      !st.is_playing;
+
+  }
+
+  else if(k==='vol'){
+
+    st.device.volume_percent=
+      v;
+
+  }
+
+  else if(k==='seek'){
+
+    st.progress_ms=
+      v;
+
+    stAt=
+      now;
+
+  }
+
+  else if(k==='shuf'){
+
+    st.shuffle_state=
+      !st.shuffle_state;
+
+  }
+
+  else if(k==='rep'){
+
+    st.repeat_state=
+      RM[
+        (
+          RM.indexOf(
+            st.repeat_state
+          )+1
+        )%3
+      ];
+
+  }
+
+  else if(demo){
+
+    go(
+      k==='next'
+        ?1
+        :-1
+    );
+
+  }
+
+
+  render();
+
+
+  if(demo)
+    return;
+
+
+  api(
+    rq[1],
+    {
+      method:rq[0]
+    }
+  )
+  .then(r=>{
+
+    if(r.status===404){
+
+      msg(
+        'No active Spotify device. Start playback on your phone or computer first.'
+      );
+
+    }
+
+    else if(r.status===403){
+
+      msg(
+        'Spotify refused that command (playback control needs Premium).'
+      );
+
+    }
+
+    setTimeout(
+      poll,
+      400
+    );
+
+  })
+  .catch(()=>{});
+
+}
+
+
+$('#prev').onclick=
+  ()=>act('prev');
+
+$('#next').onclick=
+  ()=>act('next');
+
+$('#shuf').onclick=
+  ()=>act('shuf');
+
+$('#rep').onclick=
+  ()=>act('rep');
+
+
+/* =====================================
+   SEEK
+===================================== */
+
+$('#bar').onclick=e=>{
+
+  if(
+    !st||
+    !st.item
+  )
+    return;
+
+  const r=
+    e.currentTarget
+      .getBoundingClientRect();
+
+  act(
+    'seek',
+
+    (
+      (e.clientX-r.left)/
+      r.width
+    )*
+    st.item.duration_ms
+  );
+
+};
+
+
+/* =====================================
+   VOLUME KNOB
+===================================== */
+
+const kn=
+  $('#knob');
+
+let drag=null;
+
+
+const ang=e=>{
+
+  const r=
+    kn.getBoundingClientRect();
+
+  return Math.atan2(
+
+    e.clientY-
+    r.top-
+    r.height/2,
+
+    e.clientX-
+    r.left-
+    r.width/2
+
+  );
+
+};
+
+
+function drawKnob(){
+
+  const ring=
+    kn.querySelector(
+      '.ring'
+    );
+
+  const deg=
+    Math.max(
+      0,
+      Math.min(
+        270,
+        vol*2.7
+      )
+    );
+
+  ring.style.background=
+    `conic-gradient(
+      from -135deg,
+      var(--ac) 0deg,
+      var(--ac) ${deg}deg,
+      #313746 ${deg}deg,
+      #313746 270deg
+    )`;
+
+  ring.style.filter=
+    `drop-shadow(
+      0 0 ${6+vol/12}px
+      color-mix(
+        in srgb,
+        var(--ac) 85%,
+        transparent
+      )
+    )`;
+
+  kn.querySelector(
+    'i'
+  ).style.transform=
+    `rotate(${
+      -135+
+      2.7*vol
+    }deg)`;
+
+  $('#vol').textContent=
+    st&&
+    st.device&&
+    st.device.volume_percent==null
+      ?'–'
+      :vol;
+
+}
+
+
+function setVol(v){
+
+  vol=
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(v)
+      )
+    );
+
+  volLock=
+    Date.now()+2500;
+
+  drawKnob();
+
+  clearTimeout(vt);
+
+  vt=
+    setTimeout(
+      ()=>{
+        act(
+          'vol',
+          vol
+        );
+      },
+      200
+    );
+
+}
+
+
+kn.onpointerdown=e=>{
+
+  kn.setPointerCapture(
+    e.pointerId
+  );
+
+  drag={
+    a:ang(e),
+    m:0
+  };
+
+};
+
+
+kn.onpointermove=e=>{
+
+  if(!drag)
+    return;
+
+  let d=
+    ang(e)-
+    drag.a;
+
+  if(d>Math.PI)
+    d-=2*Math.PI;
+
+  if(d<-Math.PI)
+    d+=2*Math.PI;
+
+  drag.a=
+    ang(e);
+
+  drag.m+=
+    Math.abs(d);
+
+  setVol(
+    vol+
+    d/
+    (1.5*Math.PI)*
+    100
+  );
+
+};
+
+
+kn.onpointerup=()=>{
+
+  if(
+    drag&&
+    drag.m<.08
+  ){
+
+    act('pp');
+
+  }
+
+  drag=null;
+
+};
+
+
+kn.onpointercancel=()=>{
+
+  drag=null;
+
+};
+
+
+kn.onwheel=e=>{
+
+  e.preventDefault();
+
+  setVol(
+    vol-
+    Math.sign(
+      e.deltaY
+    )*3
+  );
+
+};
+
+
+/* =====================================
+   KEYBOARD
+===================================== */
+
+addEventListener(
+  'keydown',
+  e=>{
+
+    if(
+      e.target.tagName==='INPUT'||
+      $('#player').hidden
+    )
+      return;
+
+    if(e.key===' '){
+
+      e.preventDefault();
+
+      act('pp');
+
+    }
+
+    else if(
+      e.key==='ArrowRight'
+    ){
+
+      act('next');
+
+    }
+
+    else if(
+      e.key==='ArrowLeft'
+    ){
+
+      act('prev');
+
+    }
+
+    else if(
+      e.key==='ArrowUp'
+    ){
+
+      e.preventDefault();
+
+      setVol(
+        vol+5
+      );
+
+    }
+
+    else if(
+      e.key==='ArrowDown'
+    ){
+
+      e.preventDefault();
+
+      setVol(
+        vol-5
+      );
+
+    }
+
+  }
+);
+
+
+/* =====================================
+   ALBUM COLOR
+===================================== */
+
+function tint(img){
+
+  try{
+
+    const c=
+      document.createElement(
+        'canvas'
+      );
+
+    c.width=
+      c.height=
+      8;
+
+    const x=
+      c.getContext(
+        '2d'
+      );
+
+    x.drawImage(
+      img,
+      0,
+      0,
+      8,
+      8
+    );
+
+    const d=
+      x.getImageData(
+        0,
+        0,
+        8,
+        8
+      ).data;
+
+    let r=0,
+        g=0,
+        b=0;
+
+    for(
+      let i=0;
+      i<d.length;
+      i+=4
+    ){
+
+      r+=d[i];
+      g+=d[i+1];
+      b+=d[i+2];
+
+    }
+
+    const n=
+      d.length/4;
+
+    document.documentElement
+      .style
+      .setProperty(
+        '--tint',
+
+        `rgb(
+          ${r/n|0},
+          ${g/n|0},
+          ${b/n|0}
+        )`
+      );
+
+  }
+
+  catch(e){}
+
+}
+
+
+$('#art').onload=
+  e=>tint(e.target);
+
+
+/* =====================================
+   RENDER
+===================================== */
+
+function render(){
+
+  const it=
+    st&&st.item;
+
+  if(!it){
+
+    $('#title').textContent=
+      'Nothing playing';
+
+    $('#artist').textContent=
+      'Start Spotify on any device';
+
+    $('#dev').textContent='';
+
+    return;
+
+  }
+
+
+  $('#title').textContent=
+    it.name;
+
+
+  $('#artist').textContent=
+    it.artists
+      ?it.artists
+        .map(
+          a=>a.name
+        )
+        .join(', ')
+      :'';
+
+
+  const im=
+    (
+      it.album||
+      it
+    ).images||[];
+
+
+  const u=
+    (
+      im.find(
+        i=>i.width===300
+      )||
+      im[0]||
+      {}
+    ).url||'';
+
+
+  if(
+    u!==curArt
+  ){
+
+    curArt=u;
+
+    $('#art').crossOrigin=
+      'anonymous';
+
+    $('#art').src=
+      u;
+
+  }
+
+
+  if(
+    Date.now()>volLock&&
+    st.device&&
+    st.device.volume_percent!=null
+  ){
+
+    vol=
+      st.device.volume_percent;
+
+  }
+
+
+  drawKnob();
+
+
+  $('#shuf').classList.toggle(
+    'on',
+    !!st.shuffle_state
+  );
+
+
+  $('#rep').textContent=
+    'Repeat: '+
+    (
+      st.repeat_state||
+      'off'
+    );
+
+
+  $('#rep').classList.toggle(
+    'on',
+
+    st.repeat_state&&
+    st.repeat_state!=='off'
+  );
+
+
+  $('#dev').textContent=
+
+    (
+      st.is_playing
+        ?'Playing on '
+        :'Paused on '
+    )+
+
+    (
+      st.device
+        ?st.device.name
+        :'unknown device'
+    );
+
+}
+
+
+/* =====================================
+   PROGRESS TIMER
+===================================== */
+
+(function tick(){
+
+  const it=
+    st&&st.item;
+
+  const f=
+    $('#fill');
+
+
+  if(it){
+
+    const d=
+      it.duration_ms;
+
+    let p=
+      st.progress_ms+
+      (
+        st.is_playing
+          ?performance.now()-stAt
+          :0
+      );
+
+
+    if(p>=d){
+
+      p=d;
+
+      if(st.is_playing){
+
+        if(demo){
+
+          go(1);
+
+        }
+
+        else if(!tick.f){
+
+          tick.f=1;
+
+          setTimeout(
+            ()=>{
+              tick.f=0;
+              poll();
+            },
+            800
+          );
+
+        }
+
+      }
+
+    }
+
+
+    f.style.width=
+      p/d*100+'%';
+
+
+    $('#cur').textContent=
+      fm(p);
+
+
+    $('#dur').textContent=
+      fm(d);
+
+  }
+
+  else{
+
+    f.style.width=
+      '0';
+
+    $('#cur').textContent=
+      '0:00';
+
+    $('#dur').textContent=
+      '0:00';
+
+  }
+
+
+  requestAnimationFrame(
+    tick
+  );
+
+})();
+
+
+/* =====================================
+   SHOW PLAYER
+===================================== */
+
+function show(){
+
+  const on=
+    !!(
+      tok||
+      demo
+    );
+
+  $('#setup').hidden=
+    on;
+
+  $('#player').hidden=
+    !on;
+
+}
+
+
+/* =====================================
+   DEMO MODE
+===================================== */
+
+const art=h=>{
+
+  const c=
+    document.createElement(
+      'canvas'
+    );
+
+  c.width=
+    c.height=
+    300;
+
+  const x=
+    c.getContext(
+      '2d'
+    );
+
+  const g=
+    x.createLinearGradient(
+      0,
+      0,
+      300,
+      300
+    );
+
+  g.addColorStop(
+    0,
+    `hsl(${h} 70% 55%)`
+  );
+
+  g.addColorStop(
+    1,
+    `hsl(${h+60} 70% 25%)`
+  );
+
+  x.fillStyle=
+    g;
+
+  x.fillRect(
+    0,
+    0,
+    300,
+    300
+  );
+
+  x.lineWidth=8;
+
+  x.strokeStyle=
+    'rgba(255,255,255,.18)';
+
+  for(
+    let i=1;
+    i<6;
+    i++
+  ){
+
+    x.beginPath();
+
+    x.arc(
+      150,
+      150,
+      i*26,
+      0,
+      7
+    );
+
+    x.stroke();
+
+  }
+
+  return c.toDataURL();
+
+};
+
+
+const T=[
+
+  [
+    'Night Shift',
+    'Low Tide Radio',
+    212,
+    200
+  ],
+
+  [
+    'Static Bloom',
+    'Paper Satellites',
+    187,
+    320
+  ],
+
+  [
+    'Slow Lanterns',
+    'Harbor Lights',
+    243,
+    40
+  ],
+
+  [
+    'Wire & Wool',
+    'The Night Porters',
+    176,
+    260
+  ]
+
+].map(
+  ([n,a,s,h])=>({
+
+    name:n,
+
+    artists:[
+      {
+        name:a
+      }
+    ],
+
+    duration_ms:
+      s*1000,
+
+    album:{
+      images:[
+        {
+          url:art(h),
+          width:300
+        }
+      ]
+    }
+
+  })
+);
+
+
+function go(i){
+
+  idx=
+    (
+      idx+
+      i+
+      T.length
+    )%
+    T.length;
+
+  st.item=
+    T[idx];
+
+  st.progress_ms=
+    0;
+
+  stAt=
+    performance.now();
+
+  render();
+
+}
+
+
+$('#demo').onclick=()=>{
+
+  demo=true;
+
+  st={
+
+    is_playing:true,
+
+    progress_ms:42000,
+
+    shuffle_state:false,
+
+    repeat_state:'off',
+
+    device:{
+      name:'Demo speaker',
+      volume_percent:60
+    },
+
+    item:T[0]
+
+  };
+
+  stAt=
+    performance.now();
+
+  show();
+
+  render();
+
+};
+
+
+/* =====================================
+   BOOT
+===================================== */
+
+(async()=>{
+
+  const q=
+    new URLSearchParams(
+      location.search
+    );
+
+
+  if(q.get('error')){
+
+    msg(
+      'Spotify login failed: '+
+      q.get('error')
+    );
+
+  }
+
+
+  if(q.get('code')){
+
+    try{
+
+      await token({
+
+        grant_type:
+          'authorization_code',
+
+        code:
+          q.get('code'),
+
+        redirect_uri:
+          REDIR,
+
+        code_verifier:
+          get('ver')
+
+      });
+
+    }
+
+    catch(e){
+
+      msg(
+        'Login failed. Check that the Redirect URI matches exactly.'
+      );
+
+    }
+
+
+    history.replaceState(
+      {},
+      '',
+      REDIR
+    );
+
+  }
+
+
+  tok=
+    get('tok');
+
+  show();
+
+  poll();
+
+})();
+
+</script>
+
+</body>
+</html>
