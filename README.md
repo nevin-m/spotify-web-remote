@@ -10,7 +10,7 @@ The interface combines a now-playing display with physical-style controls, inclu
 
 **[▶ Live Demo](https://nevin-m.github.io/spotify-web-remote/spotify-remote.html)**
 
-If you want to use the demo, Redirect URL in spotify dash should be "https://nevin-m.github.io/spotify-web-remote/index.html"
+If you want to use the demo, Redirect URL in spotify dash should be "https://nevin-m.github.io/spotify-web-remote/spotify-remote.html"
 
 ## Features
 
